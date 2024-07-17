@@ -18,7 +18,7 @@ class File extends Model
 
     public function isOwnedBy($userId): bool
     {
-        return $this->created_by = $userId;
+        return $this->created_by == $userId;
     }
 
     protected static function boot()
@@ -55,6 +55,6 @@ class File extends Model
 
     public function isRoot()
     {
-        return $this->parent_id == null;
+        return $this->parent_id === null;
     }
 }

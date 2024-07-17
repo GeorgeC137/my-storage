@@ -3,10 +3,10 @@
 namespace App\Http\Requests;
 
 use App\Models\File;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 
 class ParentIdBaseRequest extends FormRequest
 {

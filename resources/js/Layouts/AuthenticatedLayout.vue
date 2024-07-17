@@ -2,24 +2,91 @@
   <div class="h-screen bg-gray-50 w-full flex gap-4">
     <Navigation />
 
-    <main class="flex flex-col overflow-hidden px-4 flex-1">
-      <div class="flex items-center justify-between w-full">
-        <SearchForm />
-        <UserSettingsDropdown />
-      </div>
+    <main
+      class="flex flex-col overflow-hidden px-4 flex-1"
+      :class="dragOver ? 'dropzone' : ''"
+      @drop.prevent="onDrop"
+      @dragover.prevent="OnDragOver"
+      @dragleave.prevent="OnDragLeave"
+    >
+      <template v-if="dragOver" class="text-sm py-8 text-gray-500 text-center"
+        >Drop files here to upload</template
+      >
+      <template v-else>
+        <div class="flex items-center justify-between w-full">
+          <SearchForm />
+          <UserSettingsDropdown />
+        </div>
 
-      <div class="flex flex-1 flex-col overflow-hidden">
-        <slot />
-      </div>
+        <div class="flex flex-1 flex-col overflow-hidden">
+          <slot />
+        </div>
+      </template>
     </main>
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
+import { useForm, usePage } from "@inertiajs/vue3";
+import { emitter, FILE_UPLOAD_STARTED } from "@/event-bus.js";
 import Navigation from "@/Components/app/Navigation.vue";
 import SearchForm from "@/Components/app/SearchForm.vue";
 import UserSettingsDropdown from "@/Components/app/UserSettingsDropdown.vue";
 
 const showingNavigationDropdown = ref(false);
+
+const dragOver = ref(false);
+
+const page = usePage();
+
+const fileUploadForm = useForm({
+  files: [],
+  parent_id: null,
+});
+
+function uploadFiles(files) {
+  console.log(files);
+  fileUploadForm.parent_id = page.props.folder.id;
+  fileUploadForm.files = files;
+  fileUploadForm.relative_paths = [...files].map((f) => f.webkitRelativePath);
+  fileUploadForm.post(route("file.store"));
+}
+
+function onDrop(ev) {
+  dragOver.value = false;
+  const files = ev.dataTransfer.files;
+
+  console.log(files);
+
+  if (!files.length) {
+    return;
+  }
+
+  uploadFiles(files);
+}
+
+function OnDragOver() {
+  dragOver.value = true;
+}
+
+function OnDragLeave() {
+  dragOver.value = false;
+}
+
+onMounted(() => {
+  emitter.on(FILE_UPLOAD_STARTED, uploadFiles);
+});
 </script>
+
+<style scoped>
+.dropzone {
+  width: 100%;
+  height: 100%;
+  color: #8d8d8d;
+  display: flex;
+  justify-content: center;
+  border: 2px dashed gray;
+  align-items: center;
+}
+</style>
