@@ -59,12 +59,54 @@ class FileController extends Controller
     public function store(StoreFileRequest $request)
     {
         $data = $request->validated();
+        $parent = $request->parent;
+        $user = $request->user();
+        $fileTree = $request->file_tree;
 
-        dd($data);
+        if (!$parent) {
+            $parent = $this->getRoot();
+        }
+
+        if (!empty($fileTree)) {
+            $this->saveFileTree($fileTree, $parent, $user);
+        } else {
+            foreach ($data['files'] as $file) {
+                $this->saveFile($file, $parent, $user);
+            }
+        }
+
+        // dd($data, $fileTree);
     }
 
     private function getRoot()
     {
         return File::query()->whereIsRoot()->where('created_by', Auth::id())->firstOrFail();
+    }
+
+    public function saveFileTree($fileTree, $parent, $user)
+    {
+        foreach ($fileTree as $name => $file) {
+            if (is_array($file)) {
+                $folder = new File();
+                $folder->name = $name;
+                $folder->is_folder = true;
+                $parent->appendNode($folder);
+                $this->saveFileTree($file, $folder, $user);
+            } else {
+                $this->saveFile($file, $parent, $user);
+            }
+        }
+    }
+
+    private function saveFile($file, $parent, $user): void
+    {
+        $path = $file->store('/files/' . $user->id);
+        $model = new File();
+        $model->name = $file->getClientOriginalName();
+        $model->size = $file->getSize();
+        $model->mime = $file->getMimeType();
+        $model->is_folder = false;
+        $model->storage_path = $path;
+        $parent->appendNode($model);
     }
 }
