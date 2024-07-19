@@ -54,7 +54,10 @@
           class="border-b bg-white transition duration-300 cursor-pointer ease-in-out hover:bg-gray-100"
           @dblclick="openFolder(file)"
         >
-          <td class="font-medium whitespace-nowrap text-sm px-6 py-4 text-gray-900">
+          <td
+            class="font-medium whitespace-nowrap text-sm px-6 py-4 text-gray-900 flex items-center"
+          >
+            <FileIcon :file="file" />
             {{ file.name }}
           </td>
           <td class="font-medium whitespace-nowrap text-sm px-6 py-4 text-gray-900">
@@ -79,6 +82,7 @@
 <script setup>
 import { router, Link } from "@inertiajs/vue3";
 import { HomeIcon } from "@heroicons/vue/20/solid";
+import FileIcon from "@/Components/app/FileIcon.vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 
 const { files } = defineProps({
