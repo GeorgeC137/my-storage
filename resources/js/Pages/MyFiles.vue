@@ -36,59 +36,72 @@
         </li>
       </ol>
     </nav>
-    <table class="m-w-full">
-      <thead class="bg-gray-100 border-b">
-        <tr>
-          <th class="text-sm font-medium text-gray-900 px-6 text-left py-4">Name</th>
-          <th class="text-sm font-medium text-gray-900 px-6 text-left py-4">Owner</th>
-          <th class="text-sm font-medium text-gray-900 px-6 text-left py-4">
-            Last Modified
-          </th>
-          <th class="text-sm font-medium text-gray-900 px-6 text-left py-4">Size</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="file in files.data"
-          :key="file.id"
-          class="border-b bg-white transition duration-300 cursor-pointer ease-in-out hover:bg-gray-100"
-          @dblclick="openFolder(file)"
-        >
-          <td
-            class="font-medium whitespace-nowrap text-sm px-6 py-4 text-gray-900 flex items-center"
+    <div class="flex-1 overflow-auto">
+      <table class="m-w-full">
+        <thead class="bg-gray-100 border-b">
+          <tr>
+            <th class="text-sm font-medium text-gray-900 px-6 text-left py-4">Name</th>
+            <th class="text-sm font-medium text-gray-900 px-6 text-left py-4">Owner</th>
+            <th class="text-sm font-medium text-gray-900 px-6 text-left py-4">
+              Last Modified
+            </th>
+            <th class="text-sm font-medium text-gray-900 px-6 text-left py-4">Size</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="file in allFiles.data"
+            :key="file.id"
+            class="border-b bg-white transition duration-300 cursor-pointer ease-in-out hover:bg-gray-100"
+            @dblclick="openFolder(file)"
           >
-            <FileIcon :file="file" />
-            {{ file.name }}
-          </td>
-          <td class="font-medium whitespace-nowrap text-sm px-6 py-4 text-gray-900">
-            {{ file.owner }}
-          </td>
-          <td class="font-medium whitespace-nowrap text-sm px-6 py-4 text-gray-900">
-            {{ file.updated_at }}
-          </td>
-          <td class="font-medium whitespace-nowrap text-sm px-6 py-4 text-gray-900">
-            {{ file.size }}
-          </td>
-        </tr>
-      </tbody>
-    </table>
+            <td
+              class="font-medium whitespace-nowrap text-sm px-6 py-4 text-gray-900 flex items-center"
+            >
+              <FileIcon :file="file" />
+              {{ file.name }}
+            </td>
+            <td class="font-medium whitespace-nowrap text-sm px-6 py-4 text-gray-900">
+              {{ file.owner }}
+            </td>
+            <td class="font-medium whitespace-nowrap text-sm px-6 py-4 text-gray-900">
+              {{ file.updated_at }}
+            </td>
+            <td class="font-medium whitespace-nowrap text-sm px-6 py-4 text-gray-900">
+              {{ file.size }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
-    <div v-if="!files.data.length" class="py-8 text-center text-sm text-gray-400">
-      There is no data in this folder
+      <div v-if="!allFiles.data.length" class="py-8 text-center text-sm text-gray-400">
+        There is no data in this folder
+      </div>
+
+      <div ref="loadMoreIntersect"></div>
     </div>
   </AuthenticatedLayout>
 </template>
 
 <script setup>
 import { router, Link } from "@inertiajs/vue3";
+import { httpGet } from "@/Helper/http-helper.js";
+import { onMounted, ref, onUpdated } from "vue";
 import { HomeIcon } from "@heroicons/vue/20/solid";
 import FileIcon from "@/Components/app/FileIcon.vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 
-const { files } = defineProps({
+const loadMoreIntersect = ref(null);
+
+const props = defineProps({
   files: Object,
   folder: Object,
   ancestors: Object,
+});
+
+const allFiles = ref({
+  data: props.files.data,
+  next: props.files.links.next,
 });
 
 function openFolder(file) {
@@ -98,4 +111,37 @@ function openFolder(file) {
 
   router.visit(route("myFiles", { folder: file.path }));
 }
+
+function loadMore() {
+  console.log("LOAD MORE!!!");
+  //   console.log(allFiles.value.next);
+
+  if (allFiles.value.next === null) {
+    return;
+  }
+
+  httpGet(allFiles.value.next).then((res) => {
+    allFiles.value.data = [...allFiles.value.data, ...res.data];
+    allFiles.value.next = res.links.next;
+  });
+}
+
+onUpdated(() => {
+  console.log("onUpdated triggered");
+  allFiles.value = {
+    data: props.files.data,
+    next: props.files.links.next,
+  };
+});
+
+onMounted(() => {
+  const observer = new IntersectionObserver(
+    (entries) => entries.forEach((entry) => entry.isIntersecting && loadMore()),
+    {
+      rootMargin: "-250px 0px 0px 0px",
+    }
+  );
+
+  observer.observe(loadMoreIntersect.value);
+});
 </script>

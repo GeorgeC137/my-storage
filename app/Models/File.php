@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class File extends Model
 {
@@ -40,6 +41,12 @@ class File extends Model
             }
 
             $model->path = (!$model->parent->isRoot() ? $model->parent->path . '/' : '') . Str::slug($model->name);
+        });
+
+        static::deleted(function(File $model) {
+            if (!$model->is_folder) {
+                Storage::delete($model->storage_path);
+            }
         });
     }
 
