@@ -21,6 +21,7 @@
 <script setup>
 import { usePage, useForm } from "@inertiajs/vue3";
 import { httpGet } from "@/Helper/http-helper.js";
+import { showErrorDialog } from '@/event-bus.js';
 import PrimaryButton from "@/Components/PrimaryButton.vue";
 
 const page = usePage();
@@ -39,6 +40,7 @@ const props = defineProps({
 
 function download() {
   if (!props.all && props.ids.length == 0) {
+    showErrorDialog('Please select at least one file to download')
     return;
   }
 

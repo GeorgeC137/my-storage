@@ -25,13 +25,20 @@
   </div>
   <FormProgress :form="fileUploadForm" />
   <ErrorDialog />
+  <Notification />
 </template>
 
 <script setup>
 import { ref, onMounted } from "vue";
 import { useForm, usePage } from "@inertiajs/vue3";
-import { emitter, FILE_UPLOAD_STARTED, showErrorDialog } from "@/event-bus.js";
+import {
+  emitter,
+  FILE_UPLOAD_STARTED,
+  showErrorDialog,
+  showSuccessNotification,
+} from "@/event-bus.js";
 import Navigation from "@/Components/app/Navigation.vue";
+import Notification from "@/Components/Notification.vue";
 import FormProgress from "@/Components/app/FormProgress.vue";
 import SearchForm from "@/Components/app/SearchForm.vue";
 import ErrorDialog from "@/Components/ErrorDialog.vue";
@@ -54,7 +61,9 @@ function uploadFiles(files) {
   fileUploadForm.files = files;
   fileUploadForm.relative_paths = [...files].map((f) => f.webkitRelativePath);
   fileUploadForm.post(route("file.store"), {
-    onSuccess: () => {},
+    onSuccess: () => {
+      showSuccessNotification(`${files.length} files have been uploaded`);
+    },
     onError: (errors) => {
       let message = "";
 
