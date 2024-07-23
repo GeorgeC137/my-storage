@@ -11,7 +11,7 @@ export function showErrorDialog(message) {
 }
 
 export function showSuccessNotification(message) {
-    emitter.emit(SHOW_NOTIFICATION, { type:'success', message })
+    emitter.emit(SHOW_NOTIFICATION, { type: 'success', message })
 }
 
 export function showErrorNotification(message) {

@@ -19,7 +19,10 @@ Route::controller(FileController::class)->middleware(['auth', 'verified'])->grou
     Route::get('/my-files/{folder?}', 'myFiles')->where('folder', '(.*)')->name('myFiles');
     Route::post('/folder/create', 'createFolder')->name('folder.create');
     Route::post('/file', 'store')->name('file.store');
+    Route::get('/trash', 'trash')->name('trash');
     Route::delete('/file', 'destroy')->name('file.delete');
+    Route::delete('/file/delete-forever', 'deleteForever')->name('file.deleteForever');
+    Route::post('/file/restore', 'restore')->name('file.restore');
     Route::get('/file/download', 'download')->name('file.download');
 });
 
