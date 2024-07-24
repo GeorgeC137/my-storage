@@ -14,29 +14,16 @@
       <path
         stroke-linecap="round"
         stroke-linejoin="round"
-        d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15"
+        d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z"
       />
     </svg>
-    Restore
+    Add To Favorites
   </button>
-
-  <ConfirmationDialog
-    :show="showRestoreDialog"
-    message="Are you sure you want to restore selected files?"
-    @cancel="onRestoreCancel"
-    @confirm="onRestoreConfirm"
-  ></ConfirmationDialog>
 </template>
 
 <script setup>
-import { ref } from "vue";
 import { usePage, useForm } from "@inertiajs/vue3";
 import { showErrorDialog, showSuccessNotification } from "@/event-bus.js";
-import ConfirmationDialog from "@/Components/ConfirmationDialog.vue";
-
-const emit = defineEmits(["restore"]);
-
-const showRestoreDialog = ref(false);
 
 const page = usePage();
 
@@ -60,13 +47,11 @@ const props = defineProps({
 
 function onClick() {
   if (!props.allSelected && !props.selectedIds.length) {
-    showErrorDialog("Please select at least one file to restore");
+    showErrorDialog("Please select at least one file to add to favorites");
     return;
   }
-  showRestoreDialog.value = true;
-}
 
-function onRestoreConfirm() {
+  form.parent_id = page.props.folder.id;
   if (props.allSelected) {
     form.all = true;
     form.ids = [];
@@ -74,17 +59,12 @@ function onRestoreConfirm() {
     form.ids = props.selectedIds;
   }
 
-  form.post(route("file.restore"), {
+  form.post(route("file.addToFavorites"), {
     onSuccess: () => {
-      showRestoreDialog.value = false;
-      emit("restore");
-      showSuccessNotification("Selected files have been restored");
+      form.ids = [];
+      showSuccessNotification("Selected files have been added to favorites");
     },
   });
-  console.log("Restore", props.allSelected, props.selectedIds);
-}
-
-function onRestoreCancel() {
-  showRestoreDialog.value = false;
+  console.log("AddToFavorites", props.allSelected, props.selectedIds);
 }
 </script>

@@ -70,6 +70,7 @@ function onDeleteConfirm() {
   deleteFilesForm.parent_id = page.props.folder.id;
   if (props.deleteAll) {
     deleteFilesForm.all = true;
+    deleteFilesForm.ids = [];
   } else {
     deleteFilesForm.ids = props.deleteIds;
   }

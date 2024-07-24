@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\FilesActionRequest;
 use App\Http\Requests\StoreFolderRequest;
 use App\Http\Requests\TrashFilesRequest;
+use App\Models\StarredFile;
+use Carbon\Carbon;
 use ZipArchive;
 
 class FileController extends Controller
@@ -30,10 +32,12 @@ class FileController extends Controller
         }
 
         $files = File::query()
+            ->with('starred')
             ->where('parent_id', $folder->id)
             ->where('created_by', Auth::id())
             ->orderBy('is_folder', 'desc')
             ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
             ->paginate(10);
 
         $files = FileResource::collection($files);
@@ -285,5 +289,43 @@ class FileController extends Controller
         }
 
         return to_route('trash');
+    }
+
+    public function addToFavorites(FilesActionRequest $request)
+    {
+        $data = $request->validated();
+        $parent = $request->parent;
+
+        $all = $data['all'] ?? false;
+
+        $ids = $data['ids'] ?? [];
+
+        if (!$all && empty($ids)) {
+            return [
+                'message' => 'Please select files to add to favorites'
+            ];
+        }
+
+        if ($all) {
+            $children = $parent->children;
+        } else {
+            $children = File::find($ids);
+        }
+
+        $data = [];
+
+        foreach ($children as $child) {
+            $data[] = [
+                'file_id' => $child->id,
+                'user_id' => Auth::id(),
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ];
+        }
+
+        StarredFile::insert($data);
+
+        return redirect()->back();
+        // dd($children);
     }
 }
