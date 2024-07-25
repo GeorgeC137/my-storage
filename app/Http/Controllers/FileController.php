@@ -2,21 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\AddToFavoritesRequest;
+use ZipArchive;
+use Carbon\Carbon;
 use App\Models\File;
 use Inertia\Inertia;
+use App\Models\StarredFile;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Http\Resources\FileResource;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\StoreFileRequest;
 use Illuminate\Support\Facades\Storage;
+use App\Http\Requests\ShareFilesRequest;
+use App\Http\Requests\TrashFilesRequest;
 use App\Http\Requests\FilesActionRequest;
 use App\Http\Requests\StoreFolderRequest;
-use App\Http\Requests\TrashFilesRequest;
-use App\Models\StarredFile;
-use Carbon\Carbon;
-use ZipArchive;
+use App\Http\Requests\AddToFavoritesRequest;
+use App\Models\FileShare;
+use App\Models\User;
 
 class FileController extends Controller
 {
@@ -32,14 +35,25 @@ class FileController extends Controller
             $folder = $this->getRoot();
         }
 
-        $files = File::query()
+        $favorites = (int)$request->get('favorites');
+
+        // dd($favorites);
+
+        $query = File::query()
+            ->select('files.*')
             ->with('starred')
             ->where('parent_id', $folder->id)
             ->where('created_by', Auth::id())
             ->orderBy('is_folder', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->orderBy('id', 'desc')
-            ->paginate(10);
+            ->orderBy('files.created_at', 'desc')
+            ->orderBy('files.id', 'desc');
+
+        if ($favorites == 1) {
+            $query->join('starred_files', 'starred_files.file_id', '=', 'files.id')
+                ->where('starred_files.user_id', Auth::id());
+        }
+
+        $files = $query->paginate(10);
 
         $files = FileResource::collection($files);
 
@@ -319,5 +333,52 @@ class FileController extends Controller
 
         return redirect()->back();
         // dd($children);
+    }
+
+    public function share(ShareFilesRequest $request)
+    {
+        $data = $request->validated();
+        $parent = $request->parent;
+
+        $all = $data['all'] ?? false;
+        $email = $data['email'] ?? false;
+        $ids = $data['ids'] ?? [];
+
+        $user = User::query()
+            ->where('email', $email)
+            ->first();
+
+        if (!$all && empty($ids)) {
+            return [
+                'message' => 'Please select files to share'
+            ];
+        }
+
+        if (!$user) {
+            return redirect()->back();
+        }
+
+        if ($all) {
+            $files = $parent->children;
+        } else {
+            $files = File::find($ids);
+        }
+
+        $data = [];
+
+        foreach ($files as $file) {
+            $data[] = [
+                'file_id' => $file->id,
+                'user_id' => $user->id,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ];
+        }
+
+        FileShare::insert($data);
+
+        // Send Email Address
+
+        return redirect()->back();
     }
 }

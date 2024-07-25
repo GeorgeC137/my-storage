@@ -1,25 +1,25 @@
 <template>
-  <Modal :show="modelValue" @show="onShow" max-width="sm">
+  <Modal :show="props.modelValue" @show="onShow" max-width="sm">
     <div class="p-6">
-      <h2 class="text-gray-900 text-lg font-medium">Create New Folder</h2>
+      <h2 class="text-gray-900 text-lg font-medium">Share Files</h2>
       <div class="mt-6">
-        <InputLabel for="folderName" value="Folder Name" class="sr-only" />
+        <InputLabel for="shareEmail" value="Enter Email Address" class="sr-only" />
         <TextInput
           type="text"
-          ref="folderNameInput"
-          v-model="form.name"
-          class="w-full block mt-1"
-          id="folderName"
           :class="
-            form.errors.name
+            form.errors.email
               ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
               : ''
           "
-          placeholder="Folder Name"
-          @keyup.enter="createFolder"
+          ref="emailInput"
+          v-model="form.email"
+          class="w-full block mt-1"
+          id="shareEmail"
+          placeholder="Enter Email Address"
+          @keyup.enter="share"
         />
 
-        <InputError :message="form.errors.name" class="mt-2" />
+        <InputError :message="form.errors.email" class="mt-2" />
       </div>
 
       <div class="mt-6 flex justify-end">
@@ -28,7 +28,7 @@
           class="ml-3"
           :disabled="form.processing"
           :class="{ 'opacity-25': form.processing }"
-          @click="createFolder"
+          @click="share"
           >Submit</PrimaryButton
         >
       </div>
@@ -38,45 +38,59 @@
 
 <script setup>
 import Modal from "@/Components/Modal.vue";
-import InputError from "@/Components/InputError.vue";
 import TextInput from "@/Components/TextInput.vue";
+import InputError from "@/Components/InputError.vue";
 import InputLabel from "@/Components/InputLabel.vue";
 import SecondaryButton from "@/Components/SecondaryButton.vue";
 import PrimaryButton from "@/Components/PrimaryButton.vue";
 import { useForm, usePage } from "@inertiajs/vue3";
-import { ref, nextTick } from "vue";
 import { showSuccessNotification } from "@/event-bus.js";
+import { ref, nextTick } from "vue";
 
-const { modelValue } = defineProps({
+const props = defineProps({
   modelValue: Boolean,
+  allSelected: Boolean,
+  selectedIds: Array,
 });
 
 const form = useForm({
-  name: "",
+  email: null,
+  ids: [],
+  all: false,
   parent_id: null,
 });
 
 const page = usePage();
 
-const folderNameInput = ref(null);
+const emailInput = ref(null);
 
 const emit = defineEmits(["update:modelValue"]);
 
 function onShow(params) {
-  nextTick(() => folderNameInput.value.focus());
+  nextTick(() => emailInput.value.focus());
 }
 
-function createFolder(params) {
-  //   const name = form.name;
+function share(params) {
+  if (props.allSelected) {
+    form.all = true;
+    form.ids = [];
+  } else {
+    form.ids = props.selectedIds;
+  }
+
+  const email = form.email;
   form.parent_id = page.props.folder.id;
-  form.post(route("folder.create"), {
+  form.post(route("file.share"), {
     preserveScroll: true,
     onSuccess: () => {
-      showSuccessNotification(`The folder "${form.name}" was created successfully`);
       closeModal();
       form.reset();
+      // Show Success Message
+      showSuccessNotification(
+        `Selected files will be shared to "${email}" if the email exists in the system`
+      );
     },
-    onError: () => folderNameInput.value.focus(),
+    onError: () => emailInput.value.focus(),
   });
 }
 

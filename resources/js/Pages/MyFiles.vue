@@ -36,7 +36,16 @@
         </li>
       </ol>
 
-      <div>
+      <div class="flex">
+        <label class="flex items-center mr-3">
+          Only Favorites
+          <Checkbox
+            @change="showOnlyFavorites"
+            v-model:checked="onlyFavorites"
+            class="ml-2"
+          />
+        </label>
+        <ShareFilesButton :all-selected="allSelected" :selected-ids="selectedIds" />
         <DownloadFilesButton :all="allSelected" :ids="selectedIds" class="mr-2" />
         <DeleteFilesButton
           :delete-all="allSelected"
@@ -150,12 +159,16 @@ import FileIcon from "@/Components/app/FileIcon.vue";
 import Checkbox from "@/Components/Checkbox.vue";
 import DeleteFilesButton from "@/Components/app/DeleteFilesButton.vue";
 import DownloadFilesButton from "@/Components/app/DownloadFilesButton.vue";
+import ShareFilesButton from "@/Components/app/ShareFilesButton.vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 
 const loadMoreIntersect = ref(null);
 
 const selected = ref({});
 const allSelected = ref(false);
+const onlyFavorites = ref(false);
+
+let params = null;
 
 const selectedIds = computed(() =>
   Object.entries(selected.value)
@@ -240,6 +253,16 @@ function addRemoveFavorite(file) {
     });
 }
 
+function showOnlyFavorites() {
+  if (onlyFavorites.value) {
+    params.set("favorites", 1);
+  } else {
+    params.delete("favorites");
+  }
+
+  router.get(window.location.pathname + "?" + params.toString());
+}
+
 onUpdated(() => {
   console.log("onUpdated triggered");
   allFiles.value = {
@@ -249,6 +272,8 @@ onUpdated(() => {
 });
 
 onMounted(() => {
+  params = new URLSearchParams(window.location.search);
+  onlyFavorites.value = params.get("favorites") === "1";
   const observer = new IntersectionObserver(
     (entries) => entries.forEach((entry) => entry.isIntersecting && loadMore()),
     {
