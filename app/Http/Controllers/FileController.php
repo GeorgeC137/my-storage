@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\AddToFavoritesRequest;
 use App\Models\File;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
@@ -291,39 +292,30 @@ class FileController extends Controller
         return to_route('trash');
     }
 
-    public function addToFavorites(FilesActionRequest $request)
+    public function addToFavorites(AddToFavoritesRequest $request)
     {
         $data = $request->validated();
-        $parent = $request->parent;
 
-        $all = $data['all'] ?? false;
+        $id = $data['id'];
+        $file = File::find($id);
 
-        $ids = $data['ids'] ?? [];
+        $user_id = Auth::id();
 
-        if (!$all && empty($ids)) {
-            return [
-                'message' => 'Please select files to add to favorites'
-            ];
-        }
+        $starredFile = StarredFile::query()
+            ->where('file_id', $file->id)
+            ->where('user_id', $user_id)
+            ->first();
 
-        if ($all) {
-            $children = $parent->children;
+        if ($starredFile) {
+            $starredFile->delete();
         } else {
-            $children = File::find($ids);
-        }
-
-        $data = [];
-
-        foreach ($children as $child) {
-            $data[] = [
-                'file_id' => $child->id,
-                'user_id' => Auth::id(),
+            StarredFile::create([
+                'file_id' => $file->id,
+                'user_id' => $user_id,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
-            ];
+            ]);
         }
-
-        StarredFile::insert($data);
 
         return redirect()->back();
         // dd($children);

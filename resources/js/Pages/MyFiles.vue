@@ -37,11 +37,6 @@
       </ol>
 
       <div>
-        <AddToFavoritesButton
-          :all-selected="allSelected"
-          :selected-ids="selectedIds"
-          class="mr-2"
-        />
         <DownloadFilesButton :all="allSelected" :ids="selectedIds" class="mr-2" />
         <DeleteFilesButton
           :delete-all="allSelected"
@@ -146,8 +141,8 @@
 </template>
 
 <script setup>
-import { router, Link, useForm } from "@inertiajs/vue3";
-import { httpGet } from "@/Helper/http-helper.js";
+import { router, Link } from "@inertiajs/vue3";
+import { httpGet, httpPost } from "@/Helper/http-helper.js";
 import { showSuccessNotification } from "@/event-bus.js";
 import { onMounted, ref, onUpdated, computed } from "vue";
 import { HomeIcon } from "@heroicons/vue/20/solid";
@@ -155,7 +150,6 @@ import FileIcon from "@/Components/app/FileIcon.vue";
 import Checkbox from "@/Components/Checkbox.vue";
 import DeleteFilesButton from "@/Components/app/DeleteFilesButton.vue";
 import DownloadFilesButton from "@/Components/app/DownloadFilesButton.vue";
-import AddToFavoritesButton from "@/Components/app/AddToFavoritesButton.vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 
 const loadMoreIntersect = ref(null);
@@ -236,16 +230,14 @@ function onDelete() {
 }
 
 function addRemoveFavorite(file) {
-  const form = useForm({
-    ids: [file.id],
-  });
-
-  form.post(route("file.addToFavorites"), {
-    onSuccess: () => {
+  httpPost(route("file.addToFavorites"), { id: file.id })
+    .then(() => {
+      file.is_favorite = !file.is_favorite;
       showSuccessNotification("Selected files have been added to favorites");
-    },
-  });
-  console.log("AddToFavorites");
+    })
+    .catch(async (er) => {
+      console.log(er.error.message);
+    });
 }
 
 onUpdated(() => {
