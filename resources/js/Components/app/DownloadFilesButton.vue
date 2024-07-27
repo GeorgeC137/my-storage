@@ -21,7 +21,7 @@
 <script setup>
 import { usePage, useForm } from "@inertiajs/vue3";
 import { httpGet } from "@/Helper/http-helper.js";
-import { showErrorDialog } from '@/event-bus.js';
+import { showErrorDialog } from "@/event-bus.js";
 import PrimaryButton from "@/Components/PrimaryButton.vue";
 
 const page = usePage();
@@ -36,16 +36,20 @@ const props = defineProps({
     type: Array,
     required: false,
   },
+  sharedWithMe: false,
+  sharedByMe: false,
 });
 
 function download() {
   if (!props.all && props.ids.length == 0) {
-    showErrorDialog('Please select at least one file to download')
+    showErrorDialog("Please select at least one file to download");
     return;
   }
 
   const p = new URLSearchParams();
-  p.append("parent_id", page.props.folder.id);
+  if (page.props.folder?.id) {
+    p.append("parent_id", page.props.folder?.id);
+  }
 
   if (props.all) {
     p.append("all", props.all ? 1 : 0);
@@ -55,7 +59,15 @@ function download() {
     }
   }
 
-  httpGet(route("file.download") + "?" + p.toString()).then((res) => {
+  let url = route("file.download");
+
+  if (props.sharedWithMe) {
+    url = route("file.downloadSharedWithMe");
+  } else if (props.sharedByMe) {
+    url = route("file.downloadSharedByMe");
+  }
+
+  httpGet(url + "?" + p.toString()).then((res) => {
     if (!res.url) return;
     const a = document.createElement("a");
 

@@ -20,12 +20,16 @@ Route::controller(FileController::class)->middleware(['auth', 'verified'])->grou
     Route::post('/folder/create', 'createFolder')->name('folder.create');
     Route::post('/file', 'store')->name('file.store');
     Route::get('/trash', 'trash')->name('trash');
+    Route::get('/shared-with-me', 'sharedWithMe')->name('sharedWithMe');
+    Route::get('/shared-by-me', 'sharedByMe')->name('sharedByMe');
     Route::delete('/file', 'destroy')->name('file.delete');
     Route::delete('/file/delete-forever', 'deleteForever')->name('file.deleteForever');
     Route::post('/file/add-to-favorites', 'addToFavorites')->name('file.addToFavorites');
     Route::post('/file/share', 'share')->name('file.share');
     Route::post('/file/restore', 'restore')->name('file.restore');
     Route::get('/file/download', 'download')->name('file.download');
+    Route::get('/file/download-shared-with-me', 'downloadSharedWithMe')->name('file.downloadSharedWithMe');
+    Route::get('/file/download-shared-by-me', 'downloadSharedByMe')->name('file.downloadSharedByMe');
 });
 
 Route::get('/dashboard', function () {
