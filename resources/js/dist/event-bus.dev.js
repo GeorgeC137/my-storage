@@ -6,7 +6,8 @@ Object.defineProperty(exports, "__esModule", {
 exports.showErrorDialog = showErrorDialog;
 exports.showSuccessNotification = showSuccessNotification;
 exports.showErrorNotification = showErrorNotification;
-exports.emitter = exports.SHOW_NOTIFICATION = exports.SHOW_ERROR_DIALOG = exports.FILE_UPLOAD_STARTED = void 0;
+exports.searchResults = searchResults;
+exports.emitter = exports.ON_SEARCH = exports.SHOW_NOTIFICATION = exports.SHOW_ERROR_DIALOG = exports.FILE_UPLOAD_STARTED = void 0;
 
 var _mitt = _interopRequireDefault(require("mitt"));
 
@@ -18,6 +19,8 @@ var SHOW_ERROR_DIALOG = 'SHOW_ERROR_DIALOG';
 exports.SHOW_ERROR_DIALOG = SHOW_ERROR_DIALOG;
 var SHOW_NOTIFICATION = 'SHOW_NOTIFICATION';
 exports.SHOW_NOTIFICATION = SHOW_NOTIFICATION;
+var ON_SEARCH = 'ON_SEARCH';
+exports.ON_SEARCH = ON_SEARCH;
 var emitter = (0, _mitt["default"])();
 exports.emitter = emitter;
 
@@ -38,5 +41,11 @@ function showErrorNotification(message) {
   emitter.emit(SHOW_NOTIFICATION, {
     type: 'error',
     message: message
+  });
+}
+
+function searchResults(search) {
+  emitter.emit(ON_SEARCH, {
+    search: search
   });
 }

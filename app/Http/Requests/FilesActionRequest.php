@@ -24,7 +24,7 @@ class FilesActionRequest extends ParentIdBaseRequest
                     Rule::exists('files', 'id'),
                     function ($attribute, $id, $fail) {
                         $file = File::query()
-                            ->join('file_shares', 'file_shares.file_id', 'files.id')
+                            ->leftJoin('file_shares', 'file_shares.file_id', 'files.id')
                             ->where('files.id', $id)
                             ->where(function ($query) {
                                 $query->where('files.created_by', Auth::id())

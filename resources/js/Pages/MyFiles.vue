@@ -63,7 +63,14 @@
             >
               <Checkbox @change="onAllSelectedChange" v-model:checked="allSelected" />
             </th>
+            <th class="text-sm font-medium text-gray-900 px-6 text-left py-4"></th>
             <th class="text-sm font-medium text-gray-900 px-6 text-left py-4">Name</th>
+            <th
+              v-if="search"
+              class="text-sm font-medium text-gray-900 px-6 text-left py-4"
+            >
+              Path
+            </th>
             <th class="text-sm font-medium text-gray-900 px-6 text-left py-4">Owner</th>
             <th class="text-sm font-medium text-gray-900 px-6 text-left py-4">
               Last Modified
@@ -127,6 +134,12 @@
               <FileIcon :file="file" />
               {{ file.name }}
             </td>
+            <td
+              v-if="search"
+              class="font-medium whitespace-nowrap text-sm px-6 py-4 text-gray-900"
+            >
+              {{ file.path }}
+            </td>
             <td class="font-medium whitespace-nowrap text-sm px-6 py-4 text-gray-900">
               {{ file.owner }}
             </td>
@@ -152,7 +165,7 @@
 <script setup>
 import { router, Link } from "@inertiajs/vue3";
 import { httpGet, httpPost } from "@/Helper/http-helper.js";
-import { showSuccessNotification } from "@/event-bus.js";
+import { showSuccessNotification, emitter, ON_SEARCH } from "@/event-bus.js";
 import { onMounted, ref, onUpdated, computed } from "vue";
 import { HomeIcon } from "@heroicons/vue/20/solid";
 import FileIcon from "@/Components/app/FileIcon.vue";
@@ -169,6 +182,7 @@ const allSelected = ref(false);
 const onlyFavorites = ref(false);
 
 let params = null;
+let search = ref("");
 
 const selectedIds = computed(() =>
   Object.entries(selected.value)
@@ -274,6 +288,10 @@ onUpdated(() => {
 onMounted(() => {
   params = new URLSearchParams(window.location.search);
   onlyFavorites.value = params.get("favorites") === "1";
+  search.value = params.get("search");
+  emitter.on(ON_SEARCH, (value) => {
+    search.value = value;
+  });
   const observer = new IntersectionObserver(
     (entries) => entries.forEach((entry) => entry.isIntersecting && loadMore()),
     {

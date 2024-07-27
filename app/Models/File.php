@@ -111,8 +111,7 @@ class File extends Model
             ->join('file_shares', 'file_shares.file_id', 'files.id')
             ->where('file_shares.user_id', Auth::id())
             ->orderBy('file_shares.created_at', 'desc')
-            ->orderBy('files.id', 'desc')
-            ->paginate(10);
+            ->orderBy('files.id', 'desc');
     }
 
     public static function getSharedByMe()
@@ -122,7 +121,6 @@ class File extends Model
             ->join('file_shares', 'file_shares.file_id', 'files.id')
             ->where('files.created_by', Auth::id())
             ->orderBy('file_shares.created_at', 'desc')
-            ->orderBy('files.id', 'desc')
-            ->paginate(10);
+            ->orderBy('files.id', 'desc');
     }
 }
