@@ -23,6 +23,7 @@ use App\Http\Requests\TrashFilesRequest;
 use App\Http\Requests\FilesActionRequest;
 use App\Http\Requests\StoreFolderRequest;
 use App\Http\Requests\AddToFavoritesRequest;
+use App\Jobs\UploadFilesToCloudJob;
 
 class FileController extends Controller
 {
@@ -88,7 +89,7 @@ class FileController extends Controller
         if ($search) {
             $query->where('name', 'like', "%$search%");
         }
-            
+
         $files = $query->paginate(10);
 
         $files = FileResource::collection($files);
@@ -109,7 +110,7 @@ class FileController extends Controller
         if ($search) {
             $query->where('name', 'like', "%$search%");
         }
-            
+
         $files = $query->paginate(10);
 
         $files = FileResource::collection($files);
@@ -134,7 +135,7 @@ class FileController extends Controller
         if ($search) {
             $query->where('name', 'like', "%$search%");
         }
-            
+
         $files = $query->paginate(10);
 
         $files = FileResource::collection($files);
@@ -289,14 +290,18 @@ class FileController extends Controller
 
     private function saveFile($file, $parent, $user): void
     {
-        $path = $file->store('/files/' . $user->id);
+        $path = $file->store('/files/' . $user->id, 'local');
         $model = new File();
         $model->name = $file->getClientOriginalName();
         $model->size = $file->getSize();
         $model->mime = $file->getMimeType();
         $model->is_folder = false;
         $model->storage_path = $path;
+        $model->uploaded_on_cloud = 0;
         $parent->appendNode($model);
+
+        // Start Background Job For File Upload
+        UploadFilesToCloudJob::dispatch($model);
     }
 
     public function restore(TrashFilesRequest $request)
