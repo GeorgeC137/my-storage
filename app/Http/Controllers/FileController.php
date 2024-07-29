@@ -13,6 +13,8 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use App\Mail\ShareFilesMail;
 use Illuminate\Http\Request;
+use App\Jobs\UploadFilesToCloudJob;
+use Illuminate\Support\Facades\Log;
 use App\Http\Resources\FileResource;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -23,7 +25,6 @@ use App\Http\Requests\TrashFilesRequest;
 use App\Http\Requests\FilesActionRequest;
 use App\Http\Requests\StoreFolderRequest;
 use App\Http\Requests\AddToFavoritesRequest;
-use App\Jobs\UploadFilesToCloudJob;
 
 class FileController extends Controller
 {
@@ -259,22 +260,22 @@ class FileController extends Controller
     public function createZip($files): string
     {
         $zipPath = 'zip/' . Str::random() . '.zip';
-        $publicPath = "public/$zipPath";
+        $publicPath = "$zipPath";
 
         if (!is_dir(dirname($publicPath))) {
-            Storage::makeDirectory(dirname($publicPath));
+            Storage::disk('public')->makeDirectory(dirname($publicPath));
         }
 
-        $zipFile = Storage::path($publicPath);
+        $zipFile = Storage::disk('public')->path($publicPath);
         $zip = new ZipArchive();
 
-        if ($zip->open($zipFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) == true) {
+        if ($zip->open($zipFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
             $this->addFilesToZip($zip, $files);
         }
 
         $zip->close();
 
-        return asset(Storage::url($zipPath));
+        return asset(Storage::disk('local')->url($zipPath));
     }
 
     private function addFilesToZip($zip, $files, $ancestors = '')
@@ -283,7 +284,15 @@ class FileController extends Controller
             if ($file->is_folder) {
                 $this->addFilesToZip($zip, $file->children, $ancestors . $file->name . '/');
             } else {
-                $zip->addFile(Storage::path($file->storage_path), $ancestors . $file->name);
+                $localPath = Storage::disk('local')->path($file->storage_path);
+                if ($file->uploaded_on_cloud == 1) {
+                    $dest = pathinfo($file->storage_path, PATHINFO_BASENAME);
+                    $content = Storage::get($file->storage_path);
+                    Storage::disk('public')->put($dest, $content);
+                    $localPath = Storage::disk('public')->path($dest);
+                }
+
+                $zip->addFile($localPath, $ancestors . $file->name);
             }
         }
     }
@@ -501,10 +510,10 @@ class FileController extends Controller
 
     private function getDownloadUrl(array $ids, $zipName)
     {
-        if (count($ids) == 1) {
+        if (count($ids) === 1) {
             $file = File::find($ids[0]);
             if ($file->is_folder) {
-                if ($file->children->count() == 0) {
+                if ($file->children->count() === 0) {
                     return [
                         'message' => 'This folder is empty.'
                     ];
@@ -514,10 +523,20 @@ class FileController extends Controller
                 $filename = $file->name . '.zip';
 
             } else {
-                $dest = 'public/' . pathinfo($file->storage_path, PATHINFO_BASENAME);
-                Storage::copy($file->storage_path, $dest);
+                $dest = pathinfo($file->storage_path, PATHINFO_BASENAME);
+                if ($file->uploaded_on_cloud) {
+                    $content = Storage::get($file->storage_path);
+                } else {
+                    $content = Storage::disk('local')->get($file->storage_path);
+                }
 
-                $url = asset(Storage::url($dest));
+                Log::debug("Getting file content. File:  " .$file->storage_path).". Content: " .  intval($content);
+
+                $success = Storage::disk('public')->put($dest, $content);
+                Log::debug('Inserted in public disk. "' . $dest . '". Success: ' . intval($success));
+
+                $url = asset(Storage::disk('public')->url($dest));
+                Log::debug("Logging URL " . $url);
                 $filename = $file->name;
             }
         } else {
