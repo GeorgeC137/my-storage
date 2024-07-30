@@ -260,13 +260,13 @@ class FileController extends Controller
     public function createZip($files): string
     {
         $zipPath = 'zip/' . Str::random() . '.zip';
-        $publicPath = "$zipPath";
+        $publicPath = "public/$zipPath";
 
         if (!is_dir(dirname($publicPath))) {
-            Storage::disk('public')->makeDirectory(dirname($publicPath));
+            Storage::makeDirectory(dirname($publicPath));
         }
 
-        $zipFile = Storage::disk('public')->path($publicPath);
+        $zipFile = Storage::path($publicPath);
         $zip = new ZipArchive();
 
         if ($zip->open($zipFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
@@ -275,7 +275,7 @@ class FileController extends Controller
 
         $zip->close();
 
-        return asset(Storage::disk('local')->url($zipPath));
+        return asset(Storage::url($zipPath));
     }
 
     private function addFilesToZip($zip, $files, $ancestors = '')
@@ -284,17 +284,7 @@ class FileController extends Controller
             if ($file->is_folder) {
                 $this->addFilesToZip($zip, $file->children, $ancestors . $file->name . '/');
             } else {
-                $localPath = Storage::disk('local')->path($file->storage_path);
-
-                if ($file->uploaded_on_cloud == 1) {
-                    $dest = pathinfo($file->storage_path, PATHINFO_BASENAME);
-                    $content = Storage::get($file->storage_path);
-                    Storage::disk('public')->put($dest, $content);
-
-                    $localPath = Storage::disk('public')->path($dest);
-                }
-
-                $zip->addFile($localPath, $ancestors . $file->name);
+                $zip->addFile(Storage::path($file->storage_path), $ancestors . $file->name);
             }
         }
     }
@@ -525,15 +515,10 @@ class FileController extends Controller
                 $filename = $file->name . '.zip';
 
             } else {
-                $dest = pathinfo($file->storage_path, PATHINFO_BASENAME);
-                if ($file->uploaded_on_cloud) {
-                    $content = Storage::get($file->storage_path);
-                } else {
-                    $content = Storage::disk('local')->get($file->storage_path);
-                }
+                $dest = 'public/' . pathinfo($file->storage_path, PATHINFO_BASENAME);
+                Storage::copy($file->storage_path, $dest);
 
-                Storage::disk('public')->put($dest, $content);
-                $url = asset(Storage::disk('public')->url($dest));
+                $url = asset(Storage::url($dest));
                 $filename = $file->name;
             }
         } else {

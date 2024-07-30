@@ -285,12 +285,10 @@ class FileController extends Controller
                 $this->addFilesToZip($zip, $file->children, $ancestors . $file->name . '/');
             } else {
                 $localPath = Storage::disk('local')->path($file->storage_path);
-
                 if ($file->uploaded_on_cloud == 1) {
                     $dest = pathinfo($file->storage_path, PATHINFO_BASENAME);
                     $content = Storage::get($file->storage_path);
                     Storage::disk('public')->put($dest, $content);
-
                     $localPath = Storage::disk('public')->path($dest);
                 }
 
@@ -532,8 +530,13 @@ class FileController extends Controller
                     $content = Storage::disk('local')->get($file->storage_path);
                 }
 
-                Storage::disk('public')->put($dest, $content);
+                Log::debug("Getting file content. File:  " .$file->storage_path).". Content: " .  intval($content);
+
+                $success = Storage::disk('public')->put($dest, $content);
+                Log::debug('Inserted in public disk. "' . $dest . '". Success: ' . intval($success));
+
                 $url = asset(Storage::disk('public')->url($dest));
+                Log::debug("Logging URL " . $url);
                 $filename = $file->name;
             }
         } else {
