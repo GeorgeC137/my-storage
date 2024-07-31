@@ -231,6 +231,8 @@ class FileController extends Controller
             [$url, $filename] = $this->getDownloadUrl($ids, $parent->name);
         }
 
+        Log::info('Final Download Response: URL: ' . $url . ', Filename: ' . $filename);
+
         return [
             'url' => $url,
             'filename' => $filename,
@@ -542,6 +544,8 @@ class FileController extends Controller
 
             $filename = $zipName . '.zip';
         }
+
+        Log::info('Download URL: ' . $url . ', Filename: ' . $filename);
 
         return [
             $url,

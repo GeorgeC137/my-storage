@@ -41,7 +41,7 @@ const props = defineProps({
 });
 
 function download() {
-  if (!props.all && props.ids.length == 0) {
+  if (!props.all && props.ids.length === 0) {
     showErrorDialog("Please select at least one file to download");
     return;
   }
