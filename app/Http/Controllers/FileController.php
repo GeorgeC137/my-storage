@@ -537,6 +537,11 @@ class FileController extends Controller
                 Storage::disk('public')->put($dest, $content);
                 $url = asset(Storage::disk('public')->url($dest));
                 $filename = $file->name;
+
+                // Log the generated URL and file path
+                Log::info('Generated URL: ' . $url);
+                Log::info('Storage Path: ' . $file->storage_path);
+                Log::info('Destination Path: ' . $dest);
             }
         } else {
             $files = File::query()->whereIn('id', $ids)->get();
@@ -544,8 +549,6 @@ class FileController extends Controller
 
             $filename = $zipName . '.zip';
         }
-
-        Log::info('Download URL: ' . $url . ', Filename: ' . $filename);
 
         return [
             $url,
